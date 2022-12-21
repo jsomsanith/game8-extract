@@ -1,0 +1,9 @@
+{
+    "importOrderSeparation": true,
+	"printWidth": 100,
+	"singleQuote": true,
+	"trailingComma": "all",
+	"semi": true,
+	"useTabs": true,
+	"arrowParens": "avoid"
+}
