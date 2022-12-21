@@ -4,11 +4,11 @@ import fetch from 'node-fetch';
 import { JSDOM } from 'jsdom';
 
 const INDEX_URL = 'https://game8.co/games/Pokemon-Scarlet-Violet/archives/397804';
-export const RR_HTML_PATH = './html';
+export const BR_HTML_PATH = './html';
 
 (async () => {
-	if (!fs.existsSync(RR_HTML_PATH)) {
-		fs.mkdirSync(RR_HTML_PATH);
+	if (!fs.existsSync(BR_HTML_PATH)) {
+		fs.mkdirSync(BR_HTML_PATH);
 	}
 
 	const res = await fetch(INDEX_URL);
@@ -26,9 +26,9 @@ export const RR_HTML_PATH = './html';
 
 			const pokemonBuildPage = await fetch(`https://game8.co${link}`);
 			const pokemonBuildPageDom = await pokemonBuildPage.text();
-			const rrDexFilePath = path.join(RR_HTML_PATH, `${name}.html`);
-			fs.writeFileSync(rrDexFilePath, pokemonBuildPageDom);
-			console.log(`${name}: saved in ${rrDexFilePath}\n`);
+			const brDexFilePath = path.join(BR_HTML_PATH, `${name}.html`);
+			fs.writeFileSync(brDexFilePath, pokemonBuildPageDom);
+			console.log(`${name}: saved in ${brDexFilePath}\n`);
 		});
 
 	window.close(); // close the jsdom

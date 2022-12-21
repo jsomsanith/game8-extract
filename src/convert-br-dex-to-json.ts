@@ -2,10 +2,10 @@ import fs from 'fs';
 import path from 'path';
 import { JSDOM } from 'jsdom';
 
-export const RR_HTML_PATH = './html';
-export const RR_JSON_PATH = './json';
+export const BR_HTML_PATH = './html';
+export const BR_JSON_PATH = './json';
 
-interface RRBuild {
+interface BRBuild {
 	name?: string;
 	recommendation?: string;
 	nature: string;
@@ -33,7 +33,7 @@ const game8StatToBuildStat = {
 };
 
 function extractStats(document: Document, headerId: string) {
-	const pokemonBuild: RRBuild = {
+	const pokemonBuild: BRBuild = {
 		nature: '',
 		evs: {
 			HP: 0,
@@ -136,12 +136,12 @@ function extractFromIndex(document: Document, headerId) {
 }
 
 const result = {};
-fs.readdirSync(RR_HTML_PATH).forEach(filePath => {
+fs.readdirSync(BR_HTML_PATH).forEach(filePath => {
 	const { name } = path.parse(filePath);
 
 	console.log(`Extracting builds for ${name}`);
 
-	const dom = fs.readFileSync(path.join(RR_HTML_PATH, filePath));
+	const dom = fs.readFileSync(path.join(BR_HTML_PATH, filePath));
 	const window = new JSDOM(dom).window;
 	const { document } = window;
 
@@ -160,10 +160,10 @@ fs.readdirSync(RR_HTML_PATH).forEach(filePath => {
 	window.close(); // close the jsdom
 });
 
-if (!fs.existsSync(RR_JSON_PATH)) {
-	fs.mkdirSync(RR_JSON_PATH);
+if (!fs.existsSync(BR_JSON_PATH)) {
+	fs.mkdirSync(BR_JSON_PATH);
 }
 
-const rrDexFilePath = path.join(RR_JSON_PATH, `rr-dex.json`);
-fs.writeFileSync(rrDexFilePath, JSON.stringify(result, null, 2));
-console.log(`RR builds saved in ${rrDexFilePath}\n`);
+const brDexFilePath = path.join(BR_JSON_PATH, `br-dex.json`);
+fs.writeFileSync(brDexFilePath, JSON.stringify(result, null, 2));
+console.log(`BR builds saved in ${brDexFilePath}\n`);
