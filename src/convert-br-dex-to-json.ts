@@ -32,6 +32,36 @@ const game8StatToBuildStat = {
 	'Sp.Def': 'SPD',
 };
 
+function fixEVs(pokemonBuild: BRBuild) {
+	const total =
+		pokemonBuild.evs.HP +
+		pokemonBuild.evs.ATK +
+		pokemonBuild.evs.DEF +
+		pokemonBuild.evs.SPE +
+		pokemonBuild.evs.SPA +
+		pokemonBuild.evs.SPD;
+	if (total <= 510) {
+		return;
+	}
+	console.log('fix EVs for ' + pokemonBuild.name);
+	// get the closest extra value
+	const diff = total - 510;
+	const closest = Object.entries(pokemonBuild.evs).reduce(
+		(closest, [key, value]) => {
+			const distance = value - diff;
+			if (distance >= 0 && distance < closest.distance) {
+				return { key, value, distance };
+			}
+			return closest;
+		},
+		{ key: '', value: 0, distance: Number.MAX_VALUE },
+	);
+	console.log(closest);
+	if (closest.key) {
+		pokemonBuild.evs[closest.key] = closest.value - diff;
+	}
+}
+
 function extractStats(document: Document, headerId: string) {
 	const pokemonBuild: BRBuild = {
 		nature: '',
@@ -72,6 +102,8 @@ function extractStats(document: Document, headerId: string) {
 							const statName = game8StatToBuildStat[name];
 							pokemonBuild.evs[statName] = Number(value);
 						});
+					// fix EVs more than 512
+					fixEVs(pokemonBuild);
 					break;
 				}
 				case 'Ability':
@@ -83,12 +115,12 @@ function extractStats(document: Document, headerId: string) {
 					break;
 				}
 				case 'Held Item':
-					pokemonBuild.heldItem = dataValue;
+					pokemonBuild.heldItem = dataValue.split('\n')[0];
 					break;
 				case 'Moveset': {
-					pokemonBuild.moveset = Array.from(valueCell.querySelectorAll<HTMLAnchorElement>('a')).map(
-						anchor => anchor.textContent.replace(/\s/g, ''),
-					);
+					pokemonBuild.moveset = Array.from(valueCell.querySelectorAll<HTMLAnchorElement>('a'))
+						.map(anchor => anchor.textContent.replace(/\s/g, '').replace(/-/g, ''))
+						.filter(Boolean);
 					break;
 				}
 			}
@@ -126,16 +158,19 @@ function extractFromIndex(document: Document, headerId) {
 			const name = tdNodes[0].textContent;
 			const recommendation = tdNodes[1].textContent.trim();
 
-			return {
-				name,
-				recommendation,
-				...extractStats(document, id),
-			};
+			const stats = extractStats(document, id);
+			return stats
+				? {
+						name,
+						recommendation,
+						...stats,
+				  }
+				: null;
 		})
 		.filter(Boolean);
 }
 
-const result = {};
+const result = [];
 fs.readdirSync(BR_HTML_PATH).forEach(filePath => {
 	const { name } = path.parse(filePath);
 
@@ -145,16 +180,18 @@ fs.readdirSync(BR_HTML_PATH).forEach(filePath => {
 	const window = new JSDOM(dom).window;
 	const { document } = window;
 
+	const pokemonBuilds = { name, builds: [] };
 	// most of the pages have the index at id=hl_2
-	result[name] = extractFromIndex(document, '#hl_2');
-	if (!result[name].length) {
+	pokemonBuilds.builds = extractFromIndex(document, '#hl_2');
+	if (!pokemonBuilds.builds.length) {
 		// some pages have the index at id=hl_3
-		result[name] = extractFromIndex(document, '#hl_3');
+		pokemonBuilds.builds = extractFromIndex(document, '#hl_3');
 	}
-	if (!result[name].length) {
+	if (!pokemonBuilds.builds.length) {
 		// other pages don't have index, we iterate on the tables
-		result[name] = extractFromIteration(document);
+		pokemonBuilds.builds = extractFromIteration(document);
 	}
+	result.push(pokemonBuilds);
 
 	console.log(`Extraction finished for ${name}\n\n`);
 	window.close(); // close the jsdom
